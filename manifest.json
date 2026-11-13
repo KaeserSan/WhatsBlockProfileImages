@@ -5,7 +5,7 @@
   "description": "Bloquea las fotos de perfil en WhatsApp Web y las sustituye por un avatar genérico (con iniciales cuando es posible).",
   "browser_specific_settings": {
     "gecko": {
-      "id": "whatsblock-profile-images@local",
+      "id": "{eb88cdbf-d303-4935-b0fd-f4634b089d52}",
       "strict_min_version": "142.0",
       "update_url": "https://raw.githubusercontent.com/KaeserSan/WhatsBlockProfileImages/main/updates.json",
       "data_collection_permissions": {
