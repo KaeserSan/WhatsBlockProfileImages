@@ -23,18 +23,25 @@ Para cargarla temporalmente sin firmar: `about:debugging#/runtime/this-firefox` 
 
 La firma se hace a mano en addons.mozilla.org. GitHub solo guarda las versiones.
 
+Requisitos, una sola vez: `brew install gh` e iniciar sesión con `gh auth login`.
+
 1. Sube `version` en `manifest.json`, por ejemplo `1.1.0` → `1.1.1`. Haz commit y push a `main`.
-2. Empaqueta la extensión:
+2. Empaqueta la extensión sin firmar en `dist/whatsblock-profile-images.xpi`:
    ```bash
-   mkdir -p dist && rm -f dist/whatsblock-profile-images.xpi && zip -r dist/whatsblock-profile-images.xpi manifest.json background.js content.js content.css avatar.svg icons
+   ./release.sh pack
    ```
-3. En el Developer Hub de Mozilla, sube una versión nueva eligiendo **"On your own"** (unlisted) y descarga el `.xpi` firmado.
-4. Crea y sube la etiqueta con el mismo número:
+3. En el Developer Hub de Mozilla, entra en la extensión → **Upload New Version** → **"On your own"**. Sube el `.xpi` y descarga el firmado, por ejemplo en `dist_signed/`.
+4. Publica la versión:
    ```bash
-   git tag v1.1.1
-   git push origin v1.1.1
+   ./release.sh publish dist_signed/<archivo-firmado>.xpi
    ```
-5. En GitHub, crea una Release a partir de esa etiqueta, adjunta el `.xpi` firmado y publícala.
+   El script comprueba que el `.xpi` está firmado, que su id y su versión coinciden con `manifest.json` y que el commit actual ya está en `origin/main`. Después crea y sube la etiqueta `vX.Y.Z` y crea la Release con el `.xpi` adjunto, renombrado a `whatsblock-profile-images-X.Y.Z.xpi`.
+5. Trae a tu copia local el `updates.json` actualizado:
+   ```bash
+   git pull
+   ```
+
+Las Releases también se pueden crear a mano en GitHub, adjuntando el `.xpi` firmado a una etiqueta `vX.Y.Z`.
 
 Al publicar la Release, la acción [`release.yml`](.github/workflows/release.yml):
 
@@ -44,7 +51,7 @@ Al publicar la Release, la acción [`release.yml`](.github/workflows/release.yml
 ## Comprobar el código
 
 ```bash
-npx web-ext lint --self-hosted --ignore-files dist README.md updates.json
+npx web-ext lint --self-hosted --ignore-files dist dist_signed README.md updates.json release.sh
 ```
 
 `--self-hosted` es necesario porque el manifest lleva `update_url`. Esa clave solo está prohibida en las extensiones publicadas en la tienda.
