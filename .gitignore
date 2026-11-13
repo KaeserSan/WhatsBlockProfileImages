@@ -1,0 +1,10 @@
+# Build / signing output
+dist/
+web-ext-artifacts/
+*.xpi
+.amo-upload-uuid
+
+# Local / OS
+.DS_Store
+.claude/
+node_modules/

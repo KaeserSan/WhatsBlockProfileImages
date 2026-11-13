@@ -1,0 +1,63 @@
+# Publishing a GitHub Release (tag vX.Y.Z) with the AMO-signed .xpi attached
+# rewrites updates.json on main so installed copies auto-update.
+#
+# Signing is done by hand on addons.mozilla.org ("On your own" / unlisted);
+# this workflow never talks to Mozilla and needs no secrets.
+name: Update updates.json
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download signed .xpi from the release
+        run: |
+          gh release download "$TAG" --pattern '*.xpi' --dir release
+          COUNT=$(ls release/*.xpi | wc -l)
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::Release $TAG must have exactly one .xpi attached (found $COUNT)"
+            exit 1
+          fi
+          echo "XPI=$(ls release/*.xpi)" >> "$GITHUB_ENV"
+
+      - name: Check tag matches the version inside the .xpi
+        run: |
+          VERSION=$(unzip -p "$XPI" manifest.json | jq -r .version)
+          ADDON_ID=$(unzip -p "$XPI" manifest.json | jq -r .browser_specific_settings.gecko.id)
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Tag $TAG does not match .xpi version $VERSION"
+            exit 1
+          fi
+          if ! unzip -l "$XPI" | grep -qE 'META-INF/(mozilla\.rsa|cose\.sig)'; then
+            echo "::error::$XPI is not signed by Mozilla"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ADDON_ID=$ADDON_ID" >> "$GITHUB_ENV"
+
+      - name: Update updates.json on main
+        run: |
+          NAME=$(basename "$XPI")
+          HASH=$(sha256sum "$XPI" | cut -d' ' -f1)
+          URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/$NAME"
+          jq -n --arg id "$ADDON_ID" --arg v "$VERSION" --arg url "$URL" --arg hash "sha256:$HASH" \
+            '{addons: {($id): {updates: [{version: $v, update_link: $url, update_hash: $hash}]}}}' \
+            > updates.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates.json
+          git commit -m "Update updates.json to $TAG"
+          git push origin main

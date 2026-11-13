@@ -1,0 +1,8 @@
+/* Every image (HTML <img> and SVG <image>, which WhatsApp uses for profile
+   pictures) stays hidden until content.js has checked it (data-wbpi set),
+   so real profile pictures never flash on screen. Only active while the
+   extension is enabled (class set by content.js). */
+html.wbpi-on img:not([data-wbpi]),
+html.wbpi-on image:not([data-wbpi]) {
+  visibility: hidden !important;
+}
