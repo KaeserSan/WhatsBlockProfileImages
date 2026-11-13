@@ -1,7 +1,13 @@
 {
   "addons": {
     "{eb88cdbf-d303-4935-b0fd-f4634b089d52}": {
-      "updates": []
+      "updates": [
+        {
+          "version": "1.1.0",
+          "update_link": "https://github.com/KaeserSan/WhatsBlockProfileImages/releases/download/v1.1.0/whatsblock-profile-images-1.1.0.xpi",
+          "update_hash": "sha256:d1846bb0eee1af76e327c75558314cda24263de1c0ba2342ce90925355dd7c7f"
+        }
+      ]
     }
   }
 }
